@@ -1,0 +1,385 @@
+<!doctype html>
+
+<title>Linking to Data Table</title> 
+<!-- http://syntagmatic.github.com/parallel-coordinates/ -->
+<link rel="stylesheet" type="text/css" href="stylesheet.css">
+
+<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+<script src="node_modules/datamaps/dist/datamaps.world.min.js"></script>
+<script src="node_modules/jquery/dist/jquery.min.js"></script>
+
+<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+
+<body>
+<h1 id="title">Project 2</h1>
+<div id="button-wrapper">
+	<div class="dropdown-wrapper">
+		<div class="dropdown">
+		  <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown">Change data
+		  <span class="caret"></span></button>
+		  <ul class="dropdown-menu">
+		    <li><a onclick="changeData('happiness')">Happiness</a></li>
+		    <li><a onclick="changeData('health')">Health</a></li>
+		  </ul>
+		</div>
+	</div>
+	<div class="dropdown-wrapper">
+
+		<div class="dropdown">
+		  <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown">Change year
+		  <span class="caret"></span></button>
+		  <ul class="dropdown-menu">
+		    <li><a onclick="show9599()">1995-1999</a></li>
+		    <li><a onclick="show0004()">2000-2004</a></li>
+		    <li><a onclick="show0509()">2005-2009</a></li>
+		    <li><a onclick="show1014()">2010-2014</a></li>
+		  </ul>
+		</div>
+	</div>
+</div>
+
+<div id="map-wrapper">
+
+	<h2><span id="dataname"></span> in year <span id="currentYear"></span></h2>
+
+	<div id="container" style="position: relative; width: 1000px; height: 450px;"></div>
+	<div id="label-wrapper">
+		<div class="label">
+			<div class="box" id="green-box"></div>
+			<h4 class="label-text">High</h4>
+		</div>
+		<div class="label">
+			<div class="box" id="yellow-box"></div>
+			<h4 class="label-text">Medium</h4>
+		</div>
+		<div class="label">
+			<div class="box" id="red-box"></div>
+			<h4 class="label-text">Low</h4>
+		</div>
+	</div>
+
+</div>
+	
+<div id="chart-wrapper">
+
+	<h2>Country: <span id="countries"></span></h2>
+	<h4>Percent of people who selected "Very important" from each country</h4>
+	<div id="chart"></div>
+</div>
+
+<div id="trails-wrapper">
+	<h1>Analytic trail - World Value Survey</h1>
+	<h4>To be able to see how countries differer regarding what they think is important I must first choose a wave, a time interval.
+</h4>
+	<img src="img/1.png" style="width: 500px" />
+	<h4>Then I need to choose every country I’m interested in.</h4>
+	<img src="img/2.png" style="width: 500px" />
+	<h4>Thereafter I can choose the question I’m interested in. I can only pick one question at a time.</h4>
+
+	<img src="img/3.png" style="width: 500px" />
+	<h4>The data is displayed in tables which does the job when comparing a few countries, but it gets more difficult to get an overview for each added country. I can see that more people in Algeria find it to be "very important" with friends than in Ecuador.</h4>
+	<img src="img/4.png" style="width: 500px" />
+	<h4>I can also choose between a couple of more or less confusing charts where the bars displaying total makes it difficult to see any difference between the other bars.</h4>
+	<img src="img/5.png" style="width: 500px" />
+
+	<h1>Analytic trail - My visualisation</h1>
+	<h4>In my visualisation I first present an overview of six different variables where the participants has answered how important they think the particular variable is. This is presented together with a map displaying the participating countries and another variable divided into high, medium and low.</h4>
+	<img src="img/6.png" style="width: 500px" />
+	<h4>It possible to brush the data in the chart which displays the chosen countries on the map. Here we can see that countries that find leisure time import also feel quite happy.</h4>
+	<img src="img/7.png" style="width: 500px" />
+	<h4>You can also hover on a line to display which country it is representing.
+</h4>
+
+	<img src="img/8.png" style="width: 500px" />
+
+
+
+
+</div>
+
+<script>
+var year = "year1014";
+var selectedCountries = [];
+var data = 'happiness'
+var set = null;
+var line = null;
+var activeBrush = false;
+
+
+function show9599() {
+	$("#chart").empty();
+	year = "year9599";
+  currentYear = "1995 - 1999";
+	createChart("data9599.csv")
+	changeData(data);
+}
+
+function show0004() {
+	$("#chart").empty();
+	year = "year0004";
+  currentYear = "2000 - 2004";
+	createChart("data0004.csv")
+	changeData(data);
+}
+
+function show0509() {
+	$("#chart").empty();
+	year = "year0509";
+  currentYear = "2005 - 2009";
+	createChart("data0509.csv")
+  changeData(data);
+}
+
+function show1014() {
+	$("#chart").empty();
+	year = "year1014";
+  currentYear = "2010 - 2014";
+	createChart("data1014.csv")
+  changeData(data);
+}
+
+function createChart(file) {
+
+	var margin = {top: 30, right: 10, bottom: 10, left: 10},
+    width = 1460 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+	var x = d3.scale.ordinal().rangePoints([0, width], 1), y = {};
+
+	var line = d3.svg.line(),
+	    axis = d3.svg.axis().orient("left"),
+	    background,
+	    foreground;
+
+
+	var svg = d3.select("#chart").append("svg:svg")
+	    .attr("width", width + margin.left + margin.right)
+	    .attr("height", height + margin.top + margin.bottom)
+	  .append("g")
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	d3.csv(file, function(error, cars) {
+
+
+	  // Extract the list of dimensions and create a scale for each.
+	  x.domain(dimensions = d3.keys(cars[0]).filter(function(d) {
+	    return d != "Country" && (y[d] = d3.scale.linear()
+	        .domain(d3.extent(cars, function(p) { return +p[d]; }))
+	        .range([height, 0]));
+	  }));
+
+	  // Add grey background lines for context.
+	  background = svg.append("g")
+	      .attr("class", "background")
+	    .selectAll("path")
+	      .data(cars)
+	    .enter().append("path")
+	      .attr("d", path);
+
+	  // Add blue foreground lines for focus.
+	  foreground = svg.append("g")
+	      .attr("class", "foreground")
+	    .selectAll("path")
+	      .data(cars)
+	    .enter().append("path")
+	      .attr("d", path);
+
+	  // Add a group element for each dimension.
+	  var g = svg.selectAll(".dimension")
+	      .data(dimensions)
+	    .enter().append("g")
+	      .attr("class", "dimension")
+	      .attr("transform", function(d) { return "translate(" + x(d) + ")"; });
+
+	  // Add an axis and title.
+	  g.append("g")
+	      .attr("class", "axis")
+	      .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
+	    .append("text")
+	      .style("text-anchor", "middle")
+	      .attr("y", -9)
+	      .text(function(d) { return d; });
+
+	  // Add and store a brush for each axis.
+	  g.append("g")
+	      .attr("class", "brush")
+	      .each(function(d) { d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brush", brush)); })
+	    .selectAll("rect")
+	      .attr("x", -8)
+	      .attr("width", 16);
+	});
+
+	// Returns the path for a given data point.
+	function path(d) {
+	  return line(dimensions.map(function(p) { return [x(p), y[p](d[p])]; }));
+	}
+
+	// Handles a brush event, toggling the display of foreground lines.
+	function brush() {
+		selectedCountries = [];
+	  var actives = dimensions.filter(function(p) {  return !y[p].brush.empty(); }),
+	      extents = actives.map(function(p) { return y[p].brush.extent(); });
+	  foreground.style("display", function(d) {
+	  	var answer = actives.every(function(p, i) {
+	    	activeBrush = true;
+	      return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+
+	    }) ? null : "none";
+	  	if (actives.length == 0) {
+	  		activeBrush = false;
+	  	}
+
+
+	  	if(answer == null) {
+	  		selectedCountries.push(d.Country)
+	  		brushMap(selectedCountries)
+	  	} 
+	  	return answer;
+	  });
+	}
+}
+
+function drawMap() {
+	map = new Datamap({
+		element: document.getElementById('container'),
+		geographyConfig: {
+		         highlightOnHover: true,
+		         popupOnHover: true,
+		         highlightFillColor: 'feauturenotabug',
+             highlightBorderColor: 'rgba(100, 100, 100, 0.8)',
+		     },
+        fills: {
+            HIGH: '#4CAF50',
+            LOW: '#F44336',
+            MEDIUM: '#FFEB3B',
+            UNKNOWN: 'rgb(0,0,0)',
+            defaultFill: '#F5F5F5'
+        },
+        data: {
+        }
+    });	    
+}
+
+function getSet(data) {
+	if (data == "happiness") {
+		currentMap = "happiness"
+		if (year == "year9599") {
+			set = {ALB: {fillKey: 'LOW'}, AZE: {fillKey: 'LOW'}, ARG: {fillKey: 'MEDIUM'}, AUS: {fillKey: 'HIGH'}, BGD: {fillKey: 'MEDIUM'}, CAN: {fillKey: 'HIGH'}, BGR: {fillKey: 'LOW'}, BLR: {fillKey: 'LOW'}, CHL: {fillKey: 'MEDIUM'}, CHN: {fillKey: 'MEDIUM'}, COL: {fillKey: 'HIGH'}, HRV: {fillKey: 'LOW'}, CZE: {fillKey: 'LOW'}, DOM: {fillKey: 'HIGH'}, SLV: {fillKey: 'HIGH'}, EST: {fillKey: 'LOW'}, FIN: {fillKey: 'MEDIUM'}, GEO: {fillKey: 'LOW'}, DEU: {fillKey: 'MEDIUM'}, HUN: {fillKey: 'LOW'}, IND: {fillKey: 'MEDIUM'}, JPN: {fillKey: 'HIGH'}, LVA: {fillKey: 'LOW'}, LTU: {fillKey: 'LOW'}, MEX: {fillKey: 'MEDIUM'}, MDA: {fillKey: 'LOW'}, MKD: {fillKey: 'LOW'}, BIH: {fillKey: 'MEDIUM'}};
+		} else if (year == "year0004") {
+			set = {ALB: {fillKey: 'LOW'}, DZA: {fillKey: 'MEDIUM'}, ARG: {fillKey: 'HIGH'}, BGD: {fillKey: 'LOW'}, BIH: {fillKey: 'MEDIUM'}, CAN: {fillKey: 'HIGH'}, CHL: {fillKey: 'HIGH'}, CHN: {fillKey: 'LOW'}, IND: {fillKey: 'MEDIUM'}, IDN: {fillKey: 'MEDIUM'}, IRN: {fillKey: 'MEDIUM'}, IRQ: {fillKey: 'LOW'}, JPN: {fillKey: 'MEDIUM'}, JOR: {fillKey: 'LOW'}, KOR: {fillKey: 'LOW'}, KGZ: {fillKey: 'MEDIUM'}, MEX: {fillKey: 'HIGH'}, MDA: {fillKey: 'LOW'}, MAR: {fillKey: 'MEDIUM'}, NGA: {fillKey: 'HIGH'}, PAK: {fillKey: 'MEDIUM'}, PER: {fillKey: 'HIGH'}, PHL: {fillKey: 'HIGH'}, PRI: {fillKey: 'HIGH'}, SAU: {fillKey: 'HIGH'}, SGP: {fillKey: 'MEDIUM'}, ZAF: {fillKey: 'HIGH'}, GRC: {fillKey: 'HIGH'}, EGY: {fillKey: 'MEDIUM'}, KOS: {fillKey: 'LOW'}, MNE: {fillKey: 'LOW'}};
+		} else if (year == "year0509") {
+        set = {AND: {fillKey: 'MEDIUM'}, ARG: {fillKey: 'HIGH'}, AUS: {fillKey: 'HIGH'}, BRA: {fillKey: 'HIGH'}, BGR: {fillKey: 'LOW'}, CAN: {fillKey: 'HIGH'}, CHL: {fillKey: 'HIGH'}, CHN: {fillKey: 'MEDIUM'}, CYP: {fillKey: 'HIGH'}, ETH: {fillKey: 'MEDIUM'}, FIN: {fillKey: 'MEDIUM'}, FRA: {fillKey: 'HIGH'}, GEO: {fillKey: 'LOW'}, DEU: {fillKey: 'MEDIUM'}, GHA: {fillKey: 'HIGH'}, GTM: {fillKey: 'HIGH'}, HKG: {fillKey: 'LOW'}, HUN: {fillKey: 'MEDIUM'}, IND: {fillKey: 'MEDIUM'}, IDN: {fillKey: 'LOW'}, IRN: {fillKey: 'MEDIUM'}, IRQ: {fillKey: 'LOW'}, ITA: {fillKey: 'MEDIUM'}, JPN: {fillKey: 'MEDIUM'}, JOR: {fillKey: 'MEDIUM'}, MYS: {fillKey: 'HIGH'}, MLI: {fillKey: 'HIGH'}, MEX: {fillKey: 'HIGH'}, MDA: {fillKey: 'LOW'}, EGY: {fillKey: 'LOW'}, BFA: {fillKey: 'MEDIUM'}};
+
+    } else if (year == "year1014") {
+      set = {DZA: {fillKey: 'MEDIUM'}, AZE: {fillKey: 'MEDIUM'}, ARG: {fillKey: 'MEDIUM'}, AUS: {fillKey: 'MEDIUM'}, BHR: {fillKey: 'MEDIUM'}, ARM: {fillKey: 'MEDIUM'}, BRA: {fillKey: 'MEDIUM'}, BLR: {fillKey: 'LOW'}, CHL: {fillKey: 'MEDIUM'}, CHN: {fillKey: 'MEDIUM'}, COL: {fillKey: 'HIGH'}, CYP: {fillKey: 'MEDIUM'}, ECU: {fillKey: 'HIGH'}, EST: {fillKey: 'LOW'}, GEO: {fillKey: 'MEDIUM'}, DEU: {fillKey: 'MEDIUM'}, GHA: {fillKey: 'HIGH'}, HKG: {fillKey: 'MEDIUM'}, IND: {fillKey: 'MEDIUM'}, IRQ: {fillKey: 'LOW'}, JPN: {fillKey: 'MEDIUM'}, KAZ: {fillKey: 'MEDIUM'}, JOR: {fillKey: 'MEDIUM'}, KWT: {fillKey: 'HIGH'}, KGZ: {fillKey: 'MEDIUM'}, LBN: {fillKey: 'MEDIUM'}, LBY: {fillKey: 'MEDIUM'}, MYS: {fillKey: 'HIGH'}, MEX: {fillKey: 'HIGH'}, MAR: {fillKey: 'MEDIUM'}, NLD: {fillKey: 'MEDIUM'}, EGY: {fillKey: 'LOW'}};
+    }
+	}
+
+	else if (data == "health") {
+  
+		currentMap = "health"
+		if (year == "year9599") {
+			set = {ALB: {fillKey: 'HIGH'}, AZE: {fillKey: 'LOW'}, ARG: {fillKey: 'MEDIUM'}, AUS: {fillKey: 'HIGH'}, BGD: {fillKey: 'LOW'}, CAN: {fillKey: 'MEDIUM'}, BGR: {fillKey: 'LOW'}, BLR: {fillKey: 'LOW'}, CHL: {fillKey: 'MEDIUM'}, CHN: {fillKey: 'HIGH'}, COL: {fillKey: 'MEDIUM'}, HRV: {fillKey: 'MEDIUM'}, CZE: {fillKey: 'LOW'}, DOM: {fillKey: 'MEDIUM'}, SLV: {fillKey: 'MEDIUM'}, EST: {fillKey: 'LOW'}, FIN: {fillKey: 'MEDIUM'}, GEO: {fillKey: 'MEDIUM'}, DEU: {fillKey: 'MEDIUM'}, HUN: {fillKey: 'LOW'}, IND: {fillKey: 'MEDIUM'}, JPN: {fillKey: 'LOW'}, LVA: {fillKey: 'LOW'}, LTU: {fillKey: 'LOW'}, MEX: {fillKey: 'MEDIUM'}, MDA: {fillKey: 'LOW'}, MKD: {fillKey: 'MEDIUM'}, BIH: {fillKey: 'MEDIUM'}};
+		} else if (year == "year0004") {
+
+      set = {ALB: {fillKey: 'MEDIUM'}, DZA: {fillKey: 'LOW'}, ARG: {fillKey: 'MEDIUM'}, BGD: {fillKey: 'LOW'}, BIH: {fillKey: 'MEDIUM'}, CAN: {fillKey: 'HIGH'}, CHL: {fillKey: 'MEDIUM'}, CHN: {fillKey: 'MEDIUM'}, IND: {fillKey: 'MEDIUM'}, IDN: {fillKey: 'LOW'}, IRN: {fillKey: 'MEDIUM'}, IRQ: {fillKey: 'MEDIUM'}, JPN: {fillKey: 'LOW'}, JOR: {fillKey: 'HIGH'}, KOR: {fillKey: 'LOW'}, KGZ: {fillKey: 'LOW'}, MEX: {fillKey: 'MEDIUM'}, MDA: {fillKey: 'LOW'}, MAR: {fillKey: 'MEDIUM'}, NGA: {fillKey: 'HIGH'}, PAK: {fillKey: 'MEDIUM'}, PER: {fillKey: 'LOW'}, PHL: {fillKey: 'MEDIUM'}, PRI: {fillKey: 'HIGH'}, SAU: {fillKey: 'HIGH'}, SGP: {fillKey: 'MEDIUM'}, ZAF: {fillKey: 'HIGH'}, GRC: {fillKey: 'MEDIUM'}, EGY: {fillKey: 'MEDIUM'}, KOS: {fillKey: 'MEDIUM'}, MNE: {fillKey: 'MEDIUM'}};
+    } else if (year == "year0509") {
+      set = {AND: {fillKey: 'HIGH'}, ARG: {fillKey: 'HIGH'}, AUS: {fillKey: 'MEDIUM'}, BRA: {fillKey: 'MEDIUM'}, BGR: {fillKey: 'HIGH'}, CAN: {fillKey: 'HIGH'}, CHL: {fillKey: 'MEDIUM'}, CHN: {fillKey: 'HIGH'}, CYP: {fillKey: 'HIGH'}, ETH: {fillKey: 'MEDIUM'}, FIN: {fillKey: 'MEDIUM'}, FRA: {fillKey: 'MEDIUM'}, GEO: {fillKey: 'LOW'}, DEU: {fillKey: 'MEDIUM'}, GHA: {fillKey: 'HIGH'}, GTM: {fillKey: 'MEDIUM'}, HKG: {fillKey: 'LOW'}, HUN: {fillKey: 'MEDIUM'}, IND: {fillKey: 'MEDIUM'}, IDN: {fillKey: 'MEDIUM'}, IRN: {fillKey: 'MEDIUM'}, IRQ: {fillKey: 'MEDIUM'}, ITA: {fillKey: 'MEDIUM'}, JPN: {fillKey: 'LOW'}, JOR: {fillKey: 'HIGH'}, MYS: {fillKey: 'MEDIUM'}, MLI: {fillKey: 'MEDIUM'}, MEX: {fillKey: 'MEDIUM'}, MDA: {fillKey: 'LOW'}, EGY: {fillKey: 'MEDIUM'}, BFA: {fillKey: 'MEDIUM'}};
+    } else if (year == "year1014") {
+      set = {ALB: {fillKey: 'HIGH'}, AZE: {fillKey: 'LOW'}, ARG: {fillKey: 'MEDIUM'}, AUS: {fillKey: 'HIGH'}, BGD: {fillKey: 'LOW'}, CAN: {fillKey: 'MEDIUM'}, BGR: {fillKey: 'LOW'}, BLR: {fillKey: 'LOW'}, CHL: {fillKey: 'MEDIUM'}, CHN: {fillKey: 'HIGH'}, COL: {fillKey: 'MEDIUM'}, HRV: {fillKey: 'MEDIUM'}, CZE: {fillKey: 'LOW'}, DOM: {fillKey: 'MEDIUM'}, SLV: {fillKey: 'MEDIUM'}, EST: {fillKey: 'LOW'}, FIN: {fillKey: 'MEDIUM'}, GEO: {fillKey: 'MEDIUM'}, DEU: {fillKey: 'MEDIUM'}, HUN: {fillKey: 'LOW'}, IND: {fillKey: 'MEDIUM'}, JPN: {fillKey: 'LOW'}, LVA: {fillKey: 'LOW'}, LTU: {fillKey: 'LOW'}, MEX: {fillKey: 'MEDIUM'}, MDA: {fillKey: 'LOW'}, MKD: {fillKey: 'MEDIUM'}, BIH: {fillKey: 'MEDIUM'}};
+    }
+	}
+	return set;
+}
+
+function brushMap(selectedCountries) {
+	var newobj = {}
+
+	for (var i = 0; i < selectedCountries.length; i++) {
+		if (selectedCountries[i] in set) {
+			var test = selectedCountries[i]
+			var value = set[selectedCountries[i]]
+			
+			newobj[test] = value;
+		}
+	}
+
+	map.updateChoropleth(newobj, {reset: true})
+
+}
+
+function showMap(data) {
+  $("#currentYear").empty();
+  $("#currentYear").append(currentYear);
+	$("#dataname").empty();
+  $("#dataname").append(data);
+	set = getSet(data);
+
+	map.updateChoropleth(set, {reset: true})
+
+}
+
+function changeData(newData) {
+	data = newData;
+	showMap(data)
+}
+
+function highlightLine(datapoint) {
+// display none på alla punkter som inte är datapoint
+
+}
+
+
+d3.selectAll('#container').on('mouseover', function(info) {
+  	//console.log(d3.select(d3.event.target).data()[0]['id'])
+  	if (d3.select(d3.event.target).data()[0] != undefined) {
+  		var datapoint = d3.select(d3.event.target).data()[0]['id']
+
+    highlightLine(datapoint)
+  
+  	}
+});
+
+d3.selectAll('#chart').on('mouseover', function(info) {
+
+	allCountries = {NLD: 'Netherlands', LBN: 'Libanon', LBY: 'Libya',  KWT: 'Kuwait', KAZ: 'Kazakhstan', ECU: 'Ecuador', ARM: 'Armenia', BHR: 'Bahrain', BFA: 'Burkina Faso', MYS: 'Malaysia', MLI: 'Mali', GTM: 'Guatemala', HKG: 'Hong Kong', ITA: 'Italy', GHA: 'Ghana', FRA: 'France', CYP: 'Cyprus', ETH: 'Ethiopia', BRA: 'Brazil', AND: 'Andorra', MNE: 'Montenegro', EGY: 'Egypt', KOS: 'Kosovo', GRC: 'Greece', ZAF: 'Zambia', SGP: 'Singapore', SAU: 'Saudi Arabia', PRI: 'Puerto Rico', PHL: 'Philippines', PER: 'Peru', PAK: 'Pakistan', NGA: 'Nigeria', MAR: 'Morocco', KGZ: 'Kyrgyzstan', JOR: 'Jordan', KOR: 'South Korea', IDN: 'Indonesia', IRN: 'Iran', IRQ: 'Iraq', ALB: 'Albania', AZE: 'Azerbaijan', ARG: 'Argentina', AUS: 'Australia', BGD: 'Bangladesh', CAN: 'Canada', BGR: 'Bulgaria', BLR: 'Belarus', CHL: 'Chile', CHN: 'China', COL: 'Colombia', HRV: 'Croatia', CZE: 'Czech Republic', DOM: 'Dominican Republic', DZA: 'Algeria', SLV: 'El Salvador', EST: 'Estonia', FIN: 'Finland', GEO: 'Georgia', DEU: 'Germany', HUN: 'Hungary', IND: 'India', JPN: 'Japan', LVA: 'Latvia', LTU: 'Lithuania', MEX: 'Mexico', MDA: 'Moldova', MKD: 'Macedonia', BIH: 'Bosnia and Herzegovina'}
+
+       if (d3.select(d3.event.target).data()[0] != undefined && activeBrush == false) {
+       	line = d3.select(d3.event.target)
+       	datapoint = d3.select(d3.event.target).data()[0]['Country']
+
+       	if (datapoint in allCountries) {
+       		value = allCountries[datapoint];
+       		$("#countries").empty();
+       		$("#countries").append(value);
+       		d3.select(d3.event.target).style("stroke-width", 10)
+       		select = [datapoint];
+       		brushMap(select);
+       	}  
+       }
+});
+
+d3.selectAll('#chart').on('mouseout', function(info) {
+	
+	if (line != undefined && activeBrush == false) {
+		$("#countries").empty();
+		line.style("stroke-width", 1)
+		showMap(data)
+		}
+
+ 
+});
+
+
+
+    drawMap()
+    showMap(data)
+    show1014()
+
+  
+</script>
+  
+  </body>

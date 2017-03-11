@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+
+svg {
+  font-size: 14px;
+  font-family: 'Roboto', sans-serif;
+}
+
+.background path {
+  fill: none;
+  stroke: #ddd;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  stroke: #03A9F4;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+#dataname {
+  text-transform: capitalize;
+}
+
+#button-wrapper {
+  display: flex;
+  flex-direction: row;
+}
+
+#button-wrapper {
+  margin-left: 100px;
+  margin-top: 20px;
+  margin-bottom: 50px;
+}
+
+.dropdown-wrapper {
+  margin: 30px;
+
+}
+
+.box {
+   height: 40px;
+   width: 40px;
+   border-radius: 15px;
+   margin: 0;
+   display: inline-block;
+   vertical-align: middle;
+}
+
+
+#yellow-box {
+  background: #FFEB3B;
+
+}
+
+#green-box {
+  background: #4CAF50;
+
+}
+
+#red-box {
+  background: #F44336;
+}
+
+.label-text {
+  color: black;
+    display: inline-block;
+   vertical-align: middle;  
+   margin: 0;
+   padding-left: 15px;
+
+}
+
+.label {
+  width: 150px;
+  display: flex;
+  flex-direction: row;
+  margin: 0;
+}
+
+#label-wrapper {
+  display: flex;
+  flex-direction: row;
+
+}
+
+#map-wrapper, #chart-wrapper, #trails-wrapper {
+  margin-left: 100px;
+  margin-bottom: 50px;
+}
+
+#title {
+  margin-left: 100px;
+}
